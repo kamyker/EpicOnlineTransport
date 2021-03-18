@@ -34,20 +34,20 @@ namespace EpicTransport {
             deadSockets = new List<string>();
             
             AddNotifyPeerConnectionRequestOptions addNotifyPeerConnectionRequestOptions = new AddNotifyPeerConnectionRequestOptions();
-            addNotifyPeerConnectionRequestOptions.LocalUserId = EOSSDKComponent.LocalUserProductId;
+            addNotifyPeerConnectionRequestOptions.LocalUserId = EosTransport.LocalUserProductId;
             addNotifyPeerConnectionRequestOptions.SocketId = null;
 
             OnIncomingConnectionRequest += OnNewConnection;
             OnRemoteConnectionClosed += OnConnectFail;
 
-            incomingNotificationId = EOSSDKComponent.GetP2PInterface().AddNotifyPeerConnectionRequest(addNotifyPeerConnectionRequestOptions,
+            incomingNotificationId = EosTransport.P2PInterface.AddNotifyPeerConnectionRequest(addNotifyPeerConnectionRequestOptions,
                 null, OnIncomingConnectionRequest);
 
             AddNotifyPeerConnectionClosedOptions addNotifyPeerConnectionClosedOptions = new AddNotifyPeerConnectionClosedOptions();
-            addNotifyPeerConnectionClosedOptions.LocalUserId = EOSSDKComponent.LocalUserProductId;
+            addNotifyPeerConnectionClosedOptions.LocalUserId = EosTransport.LocalUserProductId;
             addNotifyPeerConnectionClosedOptions.SocketId = null;
 
-            outgoingNotificationId = EOSSDKComponent.GetP2PInterface().AddNotifyPeerConnectionClosed(addNotifyPeerConnectionClosedOptions,
+            outgoingNotificationId = EosTransport.P2PInterface.AddNotifyPeerConnectionClosed(addNotifyPeerConnectionClosedOptions,
                 null, OnRemoteConnectionClosed);
 
             if(outgoingNotificationId == 0 || incomingNotificationId == 0) {
@@ -59,8 +59,8 @@ namespace EpicTransport {
         }
 
         protected void Dispose() {
-            EOSSDKComponent.GetP2PInterface().RemoveNotifyPeerConnectionRequest(incomingNotificationId);
-            EOSSDKComponent.GetP2PInterface().RemoveNotifyPeerConnectionClosed(outgoingNotificationId);
+            EosTransport.P2PInterface.RemoveNotifyPeerConnectionRequest(incomingNotificationId);
+            EosTransport.P2PInterface.RemoveNotifyPeerConnectionClosed(outgoingNotificationId);
 
             transport.ResetIgnoreMessagesAtStartUpTimer();
         }
@@ -102,11 +102,11 @@ namespace EpicTransport {
         }
 
         protected void SendInternal(ProductUserId target, SocketId socketId, InternalMessages type) {
-            EOSSDKComponent.GetP2PInterface().SendPacket(new SendPacketOptions() {
+            EosTransport.P2PInterface.SendPacket(new SendPacketOptions() {
                 AllowDelayedDelivery = true,
                 Channel = (byte) internal_ch,
                 Data = new byte[] { (byte) type },
-                LocalUserId = EOSSDKComponent.LocalUserProductId,
+                LocalUserId = EosTransport.LocalUserProductId,
                 Reliability = PacketReliability.ReliableOrdered,
                 RemoteUserId = target,
                 SocketId = socketId
@@ -115,11 +115,11 @@ namespace EpicTransport {
 
 
         protected void Send(ProductUserId host, SocketId socketId, byte[] msgBuffer, byte channel) =>
-            EOSSDKComponent.GetP2PInterface().SendPacket(new SendPacketOptions() {
+            EosTransport.P2PInterface.SendPacket(new SendPacketOptions() {
                 AllowDelayedDelivery = true,
                 Channel = channel,
                 Data = msgBuffer,
-                LocalUserId = EOSSDKComponent.LocalUserProductId,
+                LocalUserId = EosTransport.LocalUserProductId,
                 Reliability = channels[channel],
                 RemoteUserId = host,
                 SocketId = socketId
@@ -127,8 +127,8 @@ namespace EpicTransport {
 
 
         private bool Receive(out ProductUserId clientProductUserId, out SocketId socketId, out byte[] receiveBuffer, byte channel) {
-            Result result = EOSSDKComponent.GetP2PInterface().ReceivePacket(new ReceivePacketOptions() {
-                LocalUserId = EOSSDKComponent.LocalUserProductId,
+            Result result = EosTransport.P2PInterface.ReceivePacket(new ReceivePacketOptions() {
+                LocalUserId = EosTransport.LocalUserProductId,
                 MaxDataSizeBytes = P2PInterface.MaxPacketSize,
                 RequestedChannel = channel
             }, out clientProductUserId, out socketId, out channel, out receiveBuffer);

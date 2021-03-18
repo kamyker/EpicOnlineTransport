@@ -24,9 +24,9 @@ namespace EpicTransport {
             s.OnReceivedData += (id, data, channel) => transport.OnServerDataReceived.Invoke(id, new ArraySegment<byte>(data), channel);
             s.OnReceivedError += (id, exception) => transport.OnServerError.Invoke(id, exception);
 
-            if (!EOSSDKComponent.Initialized) {
-                Debug.LogError("EOS not initialized.");
-            }
+            // if (!EOSSDKComponent.Initialized) {
+            //     Debug.LogError("EOS not initialized.");
+            // }
 
             return s;
         }
@@ -48,9 +48,9 @@ namespace EpicTransport {
                 return;
             }
 
-            EOSSDKComponent.GetP2PInterface().AcceptConnection(
+            EosTransport.P2PInterface.AcceptConnection(
                 new AcceptConnectionOptions() {
-                LocalUserId = EOSSDKComponent.LocalUserProductId,
+                LocalUserId = EosTransport.LocalUserProductId,
                 RemoteUserId = result.RemoteUserId,
                 SocketId = result.SocketId
                 });

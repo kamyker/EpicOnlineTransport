@@ -1,0 +1,9 @@
+{
+	"name": "com.ks.mirrortransporteos",
+	"version": "1.0.0",
+	"displayName": "Mirror EOS Transport",
+	"description": "Mirror EOS Transport",
+	"unity": "2019.1",
+	"keywords": [
+	]
+}
