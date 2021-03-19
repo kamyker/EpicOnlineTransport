@@ -77,7 +77,7 @@ public class EosTransport : Transport
 			{
 				activeNode.ignoreAllMessages = false;
 
-				if(client is {isConnecting: false})
+				if(client != null && !client.isConnecting)
 				{
 					client.Connect(client.hostAddress);
 					client.isConnecting = true;
