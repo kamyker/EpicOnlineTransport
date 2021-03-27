@@ -100,8 +100,6 @@ public class EosTransport : Transport
 
 	public override void ClientConnect(string address)
 	{
-		StartCoroutine("FetchEpicAccountId");
-
 		if(ServerActive())
 		{
 			Debug.LogError("Transport already running as server!");
