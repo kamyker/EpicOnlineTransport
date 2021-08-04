@@ -36,7 +36,7 @@ public class EosTransport : Transport
 	private float ignoreCachedMessagesTimer = 0.0f;
 
 	public static RelayControl relayControl = RelayControl.AllowRelays;
-	
+
 	private int packetId = 0;
 
 	public static ProductUserId LocalUserProductId {get; private set;}
@@ -67,17 +67,20 @@ public class EosTransport : Transport
 		Debug.Assert(Channels != null && Channels.Length > 0, "No channel configured for EOS Transport.");
 		Debug.Assert(Channels.Length < byte.MaxValue, "Too many channels configured for EOS Transport");
 
-		if(Channels[0] != PacketReliability.ReliableOrdered) {
+		if(Channels[0] != PacketReliability.ReliableOrdered)
+		{
 			Debug.LogWarning("EOS Transport Channel[0] is not ReliableOrdered, Mirror expects Channel 0 to be ReliableOrdered, only change this if you know what you are doing.");
 		}
-		if (Channels[1] != PacketReliability.UnreliableUnordered) {
+		if(Channels[1] != PacketReliability.UnreliableUnordered)
+		{
 			Debug.LogWarning("EOS Transport Channel[1] is not UnreliableUnordered, Mirror expects Channel 1 to be UnreliableUnordered, only change this if you know what you are doing.");
 		}
 		// StartCoroutine("FetchEpicAccountId");
 		// StartCoroutine(nameof(ChangeRelayStatus));
 	}
-	
-	public override void ClientEarlyUpdate() {
+
+	public override void ClientEarlyUpdate()
+	{
 		if(activeNode != null)
 		{
 			ignoreCachedMessagesTimer += Time.deltaTime;
@@ -101,29 +104,38 @@ public class EosTransport : Transport
 			activeNode?.ReceiveData();
 		}
 	}
-	
-	public override void ClientLateUpdate() {}
 
-	public override void ServerEarlyUpdate() {
+	public override void ClientLateUpdate()
+	{
+	}
 
-		if (activeNode != null) {
+	public override void ServerEarlyUpdate()
+	{
+		if(activeNode != null)
+		{
 			ignoreCachedMessagesTimer += Time.deltaTime;
 
-			if (ignoreCachedMessagesTimer <= ignoreCachedMessagesAtStartUpInSeconds) {
+			if(ignoreCachedMessagesTimer <= ignoreCachedMessagesAtStartUpInSeconds)
+			{
 				activeNode.ignoreAllMessages = true;
-			} else {
+			}
+			else
+			{
 				activeNode.ignoreAllMessages = false;
 			}
 		}
 
-		if (enabled) {
+		if(enabled)
+		{
 			activeNode?.ReceiveData();
 		}
 	}
 
-	public override void ServerLateUpdate() {}
+	public override void ServerLateUpdate()
+	{
+	}
 
-	
+
 	public override bool Available()
 	{
 		return true;
@@ -179,7 +191,7 @@ public class EosTransport : Transport
 		ClientConnect(uri.Host);
 	}
 
-	public override void ClientSend(int channelId, ArraySegment<byte> segment)
+	public override void ClientSend(ArraySegment<byte> segment, int channelId)
 	{
 		Send(channelId, segment);
 	}
@@ -247,25 +259,29 @@ public class EosTransport : Transport
 		return epicBuilder.Uri;
 	}
 
-	public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
+	public override void ServerSend(int connectionId, ArraySegment<byte> segment, int channelId)
 	{
 		if(ServerActive())
 		{
-			Send( channelId, segment, connectionId);
+			Send(channelId, segment, connectionId);
 		}
 	}
 
-	public override bool ServerDisconnect(int connectionId) => ServerActive() && server.Disconnect(connectionId);
+	public override void ServerDisconnect(int connectionId) => server.Disconnect(connectionId);
 	public override string ServerGetClientAddress(int connectionId) => ServerActive() ? server.ServerGetClientAddress(connectionId) : string.Empty;
-	
-	private void Send(int channelId, ArraySegment<byte> segment, int connectionId = int.MinValue) {
+
+	private void Send(int channelId, ArraySegment<byte> segment, int connectionId = int.MinValue)
+	{
 		int packetCount = GetPacketArrayCount(channelId, segment);
 		if(packetCount == 1)
 		{
 			Packet p = new Packet(segment);
-			if (connectionId == int.MinValue) {
+			if(connectionId == int.MinValue)
+			{
 				client.Send(p.ToBytes(), channelId);
-			} else {
+			}
+			else
+			{
 				server.SendAll(connectionId, p.ToBytes(), channelId);
 			}
 			p.Dispose();
@@ -273,10 +289,14 @@ public class EosTransport : Transport
 		}
 		Packet[] packets = GetPacketArray(channelId, segment, packetCount);
 
-		for(int i  = 0; i < packets.Length; i++) {
-			if (connectionId == int.MinValue) {
+		for(int i = 0; i < packets.Length; i++)
+		{
+			if(connectionId == int.MinValue)
+			{
 				client.Send(packets[i].ToBytes(), channelId);
-			} else {
+			}
+			else
+			{
 				server.SendAll(connectionId, packets[i].ToBytes(), channelId);
 			}
 			packets[i].Dispose();
@@ -287,13 +307,14 @@ public class EosTransport : Transport
 
 	private int GetPacketArrayCount(int channelId, ArraySegment<byte> segment)
 	{
-		return Mathf.CeilToInt((float) segment.Count / (float)GetMaxSinglePacketSize(channelId));
+		return Mathf.CeilToInt((float)segment.Count / (float)GetMaxSinglePacketSize(channelId));
 	}
 
-	private Packet[] GetPacketArray(int channelId, ArraySegment<byte> segment, int packetCount) {
+	private Packet[] GetPacketArray(int channelId, ArraySegment<byte> segment, int packetCount)
+	{
 		Packet[] packets = new Packet[packetCount];
 		int maxPacketSize = GetMaxSinglePacketSize(channelId);
-		for (int i = 0; i < segment.Count; i += maxPacketSize)
+		for(int i = 0; i < segment.Count; i += maxPacketSize)
 		{
 			int fragment = i / maxPacketSize;
 
@@ -302,7 +323,7 @@ public class EosTransport : Transport
 				packets[fragment] = new Packet(new ArraySegment<byte>(segment.Array, segment.Offset + i, maxPacketSize), packetId, fragment, more);
 			else
 				packets[fragment] = new Packet(new ArraySegment<byte>(segment.Array, segment.Offset + i, segment.Count - i), packetId, fragment, more);
-			
+
 			// packets[fragment].data = new byte[more ? maxPacketSize : segment.Count - i];
 			//
 			// Array.Copy(segment.Array, i, packets[fragment].data, 0, packets[fragment].data.Length);
@@ -310,7 +331,7 @@ public class EosTransport : Transport
 
 		return packets;
 	}
-	
+
 	public override void ServerStop()
 	{
 		if(ServerActive())
@@ -343,11 +364,11 @@ public class EosTransport : Transport
 		Debug.Log("Transport shut down.");
 	}
 
-	public int GetMaxSinglePacketSize(int channelId) => P2PInterface.MaxPacketSize - 1; // 1170 bytes
+	public int GetMaxSinglePacketSize(int channelId) => P2PInterface.MaxPacketSize - 10; // 1159 bytes, we need to remove 10 bytes for the packet header (id (4 bytes) + fragment (4 bytes) + more fragments (1 byte)) 
 
-	public override int GetMaxPacketSize(int channelId) => P2PInterface.MaxPacketSize * maxFragments; 
+	public override int GetMaxPacketSize(int channelId) => P2PInterface.MaxPacketSize * maxFragments;
 
-	public override int GetMaxBatchSize(int channelId) => P2PInterface.MaxPacketSize; // Use P2PInterface.MaxPacketSize as everything above will get fragmentated and will be counter effective to batching
+	public override int GetBatchThreshold(int channelId) => P2PInterface.MaxPacketSize; // Use P2PInterface.MaxPacketSize as everything above will get fragmentated and will be counter effective to batching
 
 
 	private static void ChangeRelayStatus()
