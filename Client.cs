@@ -16,7 +16,7 @@ public class Client : Common
 	public bool Connected {get; private set;}
 	public bool Error {get; private set;}
 
-	private event Action<byte[], int> OnReceivedData;
+	private event Action<ArraySegment<byte>, int> OnReceivedData;
 	private event Action OnConnected;
 	public event Action OnDisconnected;
 
@@ -42,7 +42,7 @@ public class Client : Common
 
 		c.OnConnected += () => transport.OnClientConnected.Invoke();
 		c.OnDisconnected += () => transport.OnClientDisconnected.Invoke();
-		c.OnReceivedData += (data, channel) => transport.OnClientDataReceived.Invoke(new ArraySegment<byte>(data), channel);
+		c.OnReceivedData += (data, channel) => transport.OnClientDataReceived.Invoke(data, channel);
 
 		return c;
 	}
@@ -116,7 +116,7 @@ public class Client : Common
 
 	private void SetConnectedComplete() => connectedComplete.SetResult(connectedComplete.Task);
 
-	protected override void OnReceiveData(byte[] data, ProductUserId clientUserId, int channel)
+	protected override void OnReceiveData(ArraySegment<byte> data, ProductUserId clientUserId, int channel)
 	{
 		if(ignoreAllMessages)
 		{
