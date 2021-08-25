@@ -3,6 +3,7 @@ using Epic.OnlineServices.P2P;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Microsoft.Extensions.ObjectPool;
 using UnityEngine;
 
 namespace EpicTransport
@@ -163,9 +164,17 @@ public abstract class Common
 			MaxDataSizeBytes = P2PInterface.MaxPacketSize,
 			RequestedChannel = channel
 		}, out clientProductUserId, out socketId, out channel, receiveBuffer, out outBytesWritten);
+		// Result result = EosTransport.P2PInterface.ReceivePacket(new ReceivePacketOptions()
+		// {
+		// 	LocalUserId = EosTransport.LocalUserProductId,
+		// 	MaxDataSizeBytes = P2PInterface.MaxPacketSize,
+		// 	RequestedChannel = channel
+		// }, out clientProductUserId, out socketId, out channel, out var receiveBuffer2);
 
 		if(result == Result.Success)
 		{
+			// outBytesWritten = (uint)receiveBuffer2.Length; //remove this
+			// Array.Copy(receiveBuffer2, receiveBuffer, receiveBuffer2.Length); ///remove this
 			return true;
 		}
 
@@ -175,13 +184,13 @@ public abstract class Common
 		return false;
 	}
 
-	private bool ReceiveNoAlloc(out ProductUserId clientProductUserId, byte channel)
+	private bool ReceiveNoAlloc(ProductUserId clientProductUserId, byte channel)
 	{
 		Result result = EosTransport.P2PInterface.ExReceivePacketNoAlloc(
 			EosTransport.LocalUserProductId,
 			P2PInterface.MaxPacketSize,
 			channel,
-			out clientProductUserId, ref channel, receiveBuffer, out outBytesWritten);
+			clientProductUserId, ref channel, receiveBuffer, out outBytesWritten);
 
 		if(result == Result.Success)
 		{
@@ -230,6 +239,7 @@ public abstract class Common
 	uint outBytesWritten;
 	List<List<Packet>> emptyPacketLists = new List<List<Packet>>();
 
+	public static DefaultObjectPool<ProductUserId> IdsPool = new DefaultObjectPool<ProductUserId>(new DefaultPooledObjectPolicy<ProductUserId>(), 30);
 	public void ReceiveData()
 	{
 		try
@@ -252,7 +262,8 @@ public abstract class Common
 			// Insert new packet at the correct location in the incoming queue
 			for(int chNum = 0; chNum < channels.Length; chNum++)
 			{
-				while(transport.enabled && ReceiveNoAlloc(out ProductUserId clientUserID, (byte)chNum))
+				ProductUserId clientUserID;
+				while(transport.enabled && ReceiveNoAlloc(clientUserID = IdsPool.Get(), (byte)chNum))
 				{
 					PacketKey incomingPacketKey = new PacketKey();
 					incomingPacketKey.productUserId = clientUserID;

@@ -12,7 +12,7 @@ public struct PooledArray<T> : IDisposable
 	public PooledArray(int minLength) : this()
 	{
 		Length = minLength;
-		Debug.Log("minLength = " + minLength);
+		// Debug.Log("minLength = " + minLength);
 		Array = ArrayPool<T>.Shared.Rent(minLength);
 	}
 

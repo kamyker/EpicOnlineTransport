@@ -105,6 +105,7 @@ namespace EpicTransport {
             }
 
             if (epicToMirrorIds.TryGetValue(clientUserId, out int connectionId)) {
+                IdsPool.Return(clientUserId);
                 OnReceivedData.Invoke(connectionId, data, channel);
             } else {
                 SocketId socketId;
